@@ -1,4 +1,5 @@
 import argparse as ap
+import nltk
 from nltk import word_tokenize
 import collections
 import io
@@ -69,6 +70,7 @@ def create_dataset(path, w2id, label2id, max_len, pad_label_as_negative_one = Fa
     return dataset
 
 if __name__ == "__main__":
+    nltk.download('punkt')
     args = parse_args()
     print(args)
 
@@ -88,7 +90,6 @@ if __name__ == "__main__":
 
     id2label = {i: l for l, i in label2id.items()}
     pickle.dump(id2label, open(args.output_dir + args.dataset + '.label.pkl', 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
-
 
     train_dataset = create_dataset(args.train, w2id, label2id, args.max_len)
     valid_dataset = create_dataset(args.valid, w2id, label2id, float('inf'))

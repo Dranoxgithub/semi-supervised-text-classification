@@ -1,0 +1,17 @@
+
+.idea/vcs.xml
+.idea/semi-supervised-text-classification.iml
+.idea/modules.xml
+.idea/misc.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/deployment.xml
+.DS_Store
+temp/aclImdbSimple_pretrained_mixed/processedaclImdb_tok.vocab.pkl
+temp/aclImdbSimple_pretrained_mixed/processedaclImdb_tok.valid.pkl
+temp/aclImdbSimple_pretrained_mixed/processedaclImdb_tok.unlabel.pkl
+temp/aclImdbSimple_pretrained_mixed/processedaclImdb_tok.train.pkl
+temp/aclImdbSimple_pretrained_mixed/processedaclImdb_tok.test.pkl
+temp/aclImdbSimple_pretrained_mixed/processedaclImdb_tok.label.pkl
+pretrained_embeddings/vectors_aclImdb.txt
+test.py
