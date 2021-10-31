@@ -1,5 +1,7 @@
 import dataloader
+import torch
 import argparse as ap
+from train import BiLSTM
 
 def load_data(dataset_file, num_token_per_batch=3000):
     return dataloader.load(dataset_file + ".train.pkl", dataset_file + ".valid.pkl", dataset_file + ".test.pkl", dataset_file + ".unlabel.pkl", num_token_per_batch)
@@ -23,8 +25,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     dataset = load_data(args.path + "/" + args.dataset_name, 3000)
-
-    for i, batch_list in enumerate(dataset['train']):
-        print(batch_list)
-        print(i)
-        break
+    hidden_dim = 512
+    class_size = 2
+    embeddings = torch.rand(114426, 300)
+    model = BiLSTM(hidden_dim, class_size, embeddings, dropout=0.5)
+    model.train(dataset['train'])
+    # for i, batch_list in enumerate(dataset['train']):
+    #     print(batch_list)
+    #     print(i)
+    #
+    #     break

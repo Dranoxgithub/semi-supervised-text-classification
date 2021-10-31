@@ -1,17 +1,15 @@
 import torch
-import numpy as np
 from tqdm import tqdm
 import torch.nn as nn
-import torch.nn.functional as F
-from model import BiLSTM
+from model.model import BiLSTMModel
 import torch.optim
 
-class BiLSTMModel:
-    def __init__(self):
-        self.model = BiLSTM
 
-    def train(self, dataset):
-        train_loader = #left to be filled when dataloader is done
+class BiLSTM:
+    def __init__(self, hidden_dim, class_size, embeddings, dropout=0.5):
+        self.model = BiLSTMModel(hidden_dim, class_size, embeddings, dropout)
+
+    def train(self, train_loader):
         loss_fn = nn.CrossEntropyLoss
         n_epoch = 20 # 20 for supervised training, 50 for unsupervised
         lr = 1e-3

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-class BiLSTM(nn.Module):
+class BiLSTMModel(nn.Module):
     def __init__(self, hidden_dim, class_size, embeddings, dropout=0.5):
         super().__init__()
         self.hidden_dim = hidden_dim
