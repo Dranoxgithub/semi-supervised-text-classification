@@ -86,6 +86,9 @@ if __name__ == "__main__":
     
     id2w = {i: w for w, i in w2id.items()}
 
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+
     pickle.dump(id2w, open(args.output_dir + args.dataset + '.vocab.pkl', 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 
     id2label = {i: l for l, i in label2id.items()}
@@ -95,12 +98,11 @@ if __name__ == "__main__":
     valid_dataset = create_dataset(args.valid, w2id, label2id, float('inf'))
     test_dataset = create_dataset(args.test, w2id, label2id, float('inf'))
     unlabel_dataset = create_dataset(args.unlabel, w2id, label2id, float('inf'), True)
-    
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-    
+
     # save all tokenized datasets
-    torch.save(train_dataset, args.output_dir + args.dataset + '.train.pkl')
-    torch.save(valid_dataset, args.output_dir + args.dataset + '.valid.pkl')
-    torch.save(test_dataset, args.output_dir + args.dataset + '.test.pkl')
-    torch.save(unlabel_dataset, args.output_dir + args.dataset + '.unlabel.pkl')
+    for which_dataset in ["train", "valid", "test", "unlabel"]:
+        pickle.dump(train_dataset, open(args.output_dir + args.dataset + f'.{which_dataset}.pkl', "wb"))
+    # torch.save(train_dataset, args.output_dir + args.dataset + '.train.pkl')
+    # torch.save(valid_dataset, args.output_dir + args.dataset + '.valid.pkl')
+    # torch.save(test_dataset, args.output_dir + args.dataset + '.test.pkl')
+    # torch.save(unlabel_dataset, args.output_dir + args.dataset + '.unlabel.pkl')
