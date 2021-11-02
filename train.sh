@@ -20,7 +20,7 @@ DATASET="aclImdb_tok"
 
 export PYTHONPATH="$PWD"
 python3 scripts/main.py --data_folder=${OUT} \
-              --dataset=${DATASET} \
+              --dataset_name=${DATASET} \
               --random_seed=10 \
-              --batch_size=1 \
-              --num_epochs=1
+              --words_per_batch=10000 \
+              --num_epochs=10

@@ -1,0 +1,4 @@
+add normalize embeddings - not used
+add adaptive dropout - used
+add projection? - not used anywhere
+avoid using permute

@@ -72,7 +72,6 @@ def create_dataset(path, w2id, label2id, max_len, pad_label_as_negative_one = Fa
 if __name__ == "__main__":
     nltk.download('punkt')
     args = parse_args()
-    print(args)
 
     # get the most common word from train, valid and unlabel 
     vocabs_set, labels_set = count_vocabs_and_labels([args.train, args.valid, args.unlabel], args.vocab_size)
