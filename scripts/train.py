@@ -42,13 +42,13 @@ class Trainer:
             for i, input_dict in enumerate(self.train_loader):
                 batch_size = input_dict['labels'].shape[0]
                 # batch_dict.keys() ['batch_size', 'text', 'labels', 'seq_length_list']
-                X, Y = input_dict['text'], input_dict['labels']
-                X, Y = X.to(self.device), Y.to(self.device)  # X = padded_sent_le*batch size
+                X, Y = input_dict['text'], input_dict['labels']  # X = sent_le*bsz, Y = bsz
+                X, Y = X.to(self.device), Y.to(self.device)
 
-                embedded = self.custom_embedding(X)
+                embedded = self.custom_embedding(X)  # sent_len*bsz*embedding_dim
 
-                lstm_out, state = self.custom_LSTM(embedded, input_dict)
-                clf_out = self.custom_classifier(lstm_out)
+                lstm_out, state = self.custom_LSTM(embedded, input_dict)  # lstm_out = bsz*sent_len*(hidden_dim*2)
+                clf_out = self.custom_classifier(lstm_out)  # bsz*num_classes
                 logits = F.log_softmax(clf_out, dim=-1)
 
                 loss = criterion(logits, Y)
