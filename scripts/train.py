@@ -1,12 +1,10 @@
 import torch
-from tqdm import tqdm
 import torch.nn as nn
 from model.model import CustomEmbedding, CustomLSTM, CustomClassifier
 import torch.optim
 import torch.nn.functional as F
 import progressbar
 import numpy as np
-
 
 class Trainer:
     def __init__(self, data_loaders, dataset_len_dict, device, args):
@@ -69,19 +67,19 @@ class Trainer:
                     num_correct = self.get_num_correct(logits.cpu().detach(), Y.cpu().detach())
                     acc = num_correct / batch_size
                     print(f'batch {i:04} accuracy: {acc:.2f}')
-            self.evaluate_on_valid()
+            self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")
             print(f'Loss for epoch {epoch} : {total_loss}')
 
-    def evaluate_on_valid(self):
-        print("Entering evaluation")
+    def evaluate(self, dataloader, data_length, dataset_type):
+        print(f"Entering evaluation on {dataset_type}")
         self.custom_embedding.eval()
         self.custom_LSTM.eval()
         self.custom_classifier.eval()
         
         total_num_correct = 0
         num_processed = 0
-        bar = progressbar.ProgressBar(max_value=self.dataset_len_dict['valid'], redirect_stdout=True)
-        for i, input_dict in enumerate(self.valid_loader):
+        bar = progressbar.ProgressBar(max_value=data_length, redirect_stdout=True)
+        for i, input_dict in enumerate(dataloader):
             batch_size = input_dict['labels'].shape[0]
             # batch_dict.keys() ['batch_size', 'text', 'labels', 'seq_length_list']
             X, Y = input_dict['text'], input_dict['labels']
@@ -97,5 +95,5 @@ class Trainer:
             
             num_correct = self.get_num_correct(logits.cpu().detach(), Y.cpu().detach())
             total_num_correct += num_correct
-        acc = total_num_correct / self.dataset_len_dict['valid']
-        print(f'Accuracy on valid dataset: {acc:.2f}')
+        acc = total_num_correct / data_length
+        print(f'Accuracy on {dataset_type} dataset: {acc:.2f}')
