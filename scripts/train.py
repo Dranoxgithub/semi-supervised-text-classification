@@ -43,7 +43,7 @@ class Trainer:
                 batch_size = input_dict['labels'].shape[0]
                 # batch_dict.keys() ['batch_size', 'text', 'labels', 'seq_length_list']
                 X, Y = input_dict['text'], input_dict['labels']
-                X, Y = X.to(self.device), Y.to(self.device)
+                X, Y = X.to(self.device), Y.to(self.device)  # X = padded_sent_le*batch size
 
                 embedded = self.custom_embedding(X)
 
@@ -65,5 +65,4 @@ class Trainer:
                     num_correct = self.get_num_correct(logits.cpu().detach(), Y.cpu().detach())
                     acc = num_correct / batch_size
                     print(f'batch {i:04} accuracy: {acc:.2f}')
-
-            print(f'\nLoss for epoch {epoch} : {total_loss}')
+            print(f'Loss for epoch {epoch} : {total_loss}')
