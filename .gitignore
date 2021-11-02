@@ -1,4 +1,5 @@
 
+__pycache__/
 .idea/vcs.xml
 .idea/semi-supervised-text-classification.iml
 .idea/modules.xml
