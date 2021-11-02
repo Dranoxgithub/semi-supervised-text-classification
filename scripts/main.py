@@ -51,11 +51,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     dataloaders, dataset_lens = load_data(args.data_folder + "/" + args.dataset_name, args.words_per_batch)
-    cuda = torch.device('cuda')
     # hidden_dim = 512
     # class_size = 2
     # embeddings = torch.rand(114426, 300)
-    model = Trainer(dataloaders['train'], dataset_lens, cuda, args)
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    model = Trainer(dataloaders, dataset_lens, device, args)
     model.train()
 
     # for i, batch_list in enumerate(dataset['train']):
