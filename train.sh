@@ -23,4 +23,5 @@ python3 scripts/main.py --data_folder=${OUT} \
               --dataset_name=${DATASET} \
               --random_seed=10 \
               --words_per_batch=10000 \
-              --num_epochs=10
+              --num_epochs=10 \
+              --eval_freq=100

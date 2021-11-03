@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
 from model.model import CustomEmbedding, CustomLSTM, CustomClassifier
+from model.adversarial_training import at_loss
 import torch.optim
 import torch.nn.functional as F
 import progressbar
+from tqdm import tqdm 
 import numpy as np
 
 class Trainer:
@@ -50,7 +52,7 @@ class Trainer:
                 embedded = self.custom_embedding(X)  # sent_len*bsz*embedding_dim
 
                 lstm_out, state = self.custom_LSTM(embedded, input_dict)  # lstm_out = bsz*sent_len*(hidden_dim*2)
-                clf_out = self.custom_classifier(lstm_out)  # bsz*num_classes
+                clf_out = self.custom_classifier(lstm_out)  # bsz * num_classes
                 logits = F.log_softmax(clf_out, dim=-1)
 
                 loss = criterion(logits, Y)
@@ -63,11 +65,13 @@ class Trainer:
                 num_processed += batch_size
                 bar.update(num_processed)
 
-                if i % 100 == 0:
-                    num_correct = self.get_num_correct(logits.cpu().detach(), Y.cpu().detach())
-                    acc = num_correct / batch_size
-                    print(f'batch {i:04} accuracy: {acc:.2f}')
-            self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")
+                num_correct = self.get_num_correct(logits.cpu().detach(), Y.cpu().detach())
+                acc = num_correct / batch_size
+
+                test = at_loss(input_dict, self.custom_embedding, self.custom_LSTM, self.custom_classifier, X, Y, at_epsilon=self.args.at_epsilon)
+                if i % self.args.eval_freq == 0: print(f'batch {i:04} accuracy: {acc:.2f}')
+
+            # self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")
             print(f'Loss for epoch {epoch} : {total_loss}')
 
     def evaluate(self, dataloader, data_length, dataset_type):
@@ -92,6 +96,7 @@ class Trainer:
 
             num_processed += batch_size
             bar.update(num_processed)
+
             
             num_correct = self.get_num_correct(logits.cpu().detach(), Y.cpu().detach())
             total_num_correct += num_correct

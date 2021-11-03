@@ -29,6 +29,8 @@ if __name__ == '__main__':
                         help="number of labels in multilabel task")
     parser.add_argument("--gradient_clip_value", dest="gradient_clip_value", type=float, default=5,
                         help="gradient_clip_value")
+    parser.add_argument("--eval_freq", dest="eval_freq", type=int, default=100,
+                        help="How frequent do we print the evaluation frequency for a batch currently in training")
 
     # embedding settings
     parser.add_argument("--embedding_dropout", dest="embedding_dropout", type=float, default=0.5,
@@ -47,6 +49,10 @@ if __name__ == '__main__':
                         help="LSTM_internal_dropout")
     parser.add_argument("--LSTM_output_dropout", dest="LSTM_output_dropout", type=float, default=0.5,
                         help="LSTM_output_dropout")
+
+    # adversarial training settings 
+    parser.add_argument("--at_epsilon", dest="at_epsilon", type=float, default=5.0,
+                        help="Pertubation hyperparameter for adversarial training")
 
     args = parser.parse_args()
 
