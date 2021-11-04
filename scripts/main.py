@@ -57,7 +57,8 @@ if __name__ == '__main__':
     # virtual adversarial training settings 
     parser.add_argument("--vat_epsilon", dest="vat_epsilon", type=float, default=5.0,
                         help="Pertubation hyperparameter for virtual adversarial training")
-
+    parser.add_argument("--hyperpara_for_vat", dest="hyperpara_for_vat", type=float, default=1e-1,
+                        help="Pertubation hyperparameter for virtual adversarial training")
     # loss weights 
     parser.add_argument("--ml_loss_weight", dest="ml_loss_weight", type=float, default=1.0,
                         help="Weight for ml loss")

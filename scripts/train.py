@@ -59,9 +59,11 @@ class Trainer:
                 
                 
                 # at loss
-                # loss += self.args.at_loss_weight * at_loss(input_dict, self.custom_embedding, self.custom_LSTM, self.custom_classifier, X, Y, at_epsilon=self.args.at_epsilon)
+                # loss += self.args.at_loss_weight * at_loss(input_dict, self.custom_embedding, self.custom_LSTM, self.custom_classifier, 
+                                        # X, Y, at_epsilon=self.args.at_epsilon)
                 # vat loss
-                loss += self.args.vat_loss_weight * vat_loss(device, input_dict, self.custom_embedding, self.custom_LSTM, self.custom_classifier, X, clf_out.detach(), vat_epsilon=self.args.vat_epsilon)
+                loss += self.args.vat_loss_weight * vat_loss(self.device, input_dict, self.custom_embedding, self.custom_LSTM, self.custom_classifier, 
+                                        X, clf_out.detach(), self.args.vat_epsilon, self.args.hyperpara_for_vat)
 
                 total_loss += loss
                 optimizer.zero_grad()

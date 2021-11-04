@@ -35,7 +35,7 @@ def normalize_matrix(matrix):
     matrix = torch.permute(matrix, [1, 0, 2]) #  sent_len * bsz * embedding_dim
     return matrix
 
-def vat_loss(device, input_dict, custom_embedding, custom_LSTM, custom_classifier, X, logit_for_v, vat_epsilon=5.0, small_constant_for_finite_diff=1e-1):
+def vat_loss(device, input_dict, custom_embedding, custom_LSTM, custom_classifier, X, logit_for_v, vat_epsilon, hyperpara_for_vat):
     embedded = custom_embedding(X) # sent_len * bsz * embedding_dim
     d = torch.normal(0, 1, size=embedded.shape).to(device)
 
