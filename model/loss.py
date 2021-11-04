@@ -40,7 +40,7 @@ def vat_loss(device, input_dict, custom_embedding, custom_LSTM, custom_classifie
     d = torch.normal(0, 1, size=embedded.shape).to(device)
 
     # v_prime leaf variable
-    v_prime = (embedded.detach() + small_constant_for_finite_diff * d).requires_grad_(True)
+    v_prime = (embedded.detach() + hyperpara_for_vat * d).requires_grad_(True)
     lstm_out, state = custom_LSTM(v_prime, input_dict)
     logit = custom_classifier(lstm_out)
     kl_loss = kl_divergence(logit_for_v, logit)
