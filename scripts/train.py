@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from model.model import CustomEmbedding, CustomLSTM, CustomClassifier
-from model.adversarial_training import at_loss
+from model.loss import at_loss, vat_loss
 import torch.optim
 import torch.nn.functional as F
 import progressbar
@@ -55,7 +55,14 @@ class Trainer:
                 clf_out = self.custom_classifier(lstm_out)  # bsz * num_classes
                 logits = F.log_softmax(clf_out, dim=-1)
 
-                loss = criterion(logits, Y)
+                loss = self.args.ml_loss_weight * criterion(logits, Y)
+                
+                
+                # at loss
+                # loss += self.args.at_loss_weight * at_loss(input_dict, self.custom_embedding, self.custom_LSTM, self.custom_classifier, X, Y, at_epsilon=self.args.at_epsilon)
+                # vat loss
+                loss += self.args.vat_loss_weight * vat_loss(device, input_dict, self.custom_embedding, self.custom_LSTM, self.custom_classifier, X, clf_out.detach(), vat_epsilon=self.args.vat_epsilon)
+
                 total_loss += loss
                 optimizer.zero_grad()
                 loss.backward()
@@ -68,7 +75,6 @@ class Trainer:
                 num_correct = self.get_num_correct(logits.cpu().detach(), Y.cpu().detach())
                 acc = num_correct / batch_size
 
-                test = at_loss(input_dict, self.custom_embedding, self.custom_LSTM, self.custom_classifier, X, Y, at_epsilon=self.args.at_epsilon)
                 if i % self.args.eval_freq == 0: print(f'batch {i:04} accuracy: {acc:.2f}')
 
             # self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")

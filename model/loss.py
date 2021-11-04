@@ -1,19 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 
 def at_loss(input_dict, custom_embedding, custom_LSTM, custom_classifier, X, Y, at_epsilon=5.0):
     criterion = nn.NLLLoss()
-    embedded = custom_embedding(X) # sent_len*bsz*embedding_dim
+    embedded = custom_embedding(X) # sent_len * bsz * embedding_dim
     embedded.retain_grad()
     lstm_out, state = custom_LSTM(embedded, input_dict)
     clf_out = custom_classifier(lstm_out)
     logits = F.log_softmax(clf_out, dim=-1)
-
     loss = criterion(logits, Y)
     loss.backward()
 
-    g = normalize_matrix(embedded.grad.data)
+    g = normalize_matrix(embedded.grad.detach())
     pert_embedded = embedded + at_epsilon * g
     lstm_out, state = custom_LSTM(pert_embedded, input_dict)
     clf_out = custom_classifier(lstm_out)
@@ -34,3 +34,26 @@ def normalize_matrix(matrix):
     matrix = matrix.reshape(matrix.shape[0], sent_len, -1) # bsz * sent_len * embedding_dim
     matrix = torch.permute(matrix, [1, 0, 2]) #  sent_len * bsz * embedding_dim
     return matrix
+
+def vat_loss(device, input_dict, custom_embedding, custom_LSTM, custom_classifier, X, logit_for_v, vat_epsilon=5.0, small_constant_for_finite_diff=1e-1):
+    embedded = custom_embedding(X) # sent_len * bsz * embedding_dim
+    d = torch.normal(0, 1, size=embedded.shape).to(device)
+
+    # v_prime leaf variable
+    v_prime = (embedded.detach() + small_constant_for_finite_diff * d).requires_grad_(True)
+    lstm_out, state = custom_LSTM(v_prime, input_dict)
+    logit = custom_classifier(lstm_out)
+    kl_loss = kl_divergence(logit_for_v, logit)
+    kl_loss.backward()
+    g = normalize_matrix(v_prime.grad.detach())
+
+    pert_embedded = embedded + vat_epsilon * g
+    lstm_out, state = custom_LSTM(pert_embedded, input_dict)
+    logit = custom_classifier(lstm_out)
+    return kl_divergence(logit_for_v, logit)
+
+def kl_divergence(logit_for_v, new_logit):
+    assert len(logit_for_v.shape) == 2
+    kl = torch.sum((F.log_softmax(logit_for_v, dim=-1) - F.log_softmax(new_logit, dim=-1)) * F.softmax(logit_for_v, dim=-1), -1)
+    # average across batches
+    return torch.mean(kl) 

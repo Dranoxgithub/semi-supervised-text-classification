@@ -54,6 +54,17 @@ if __name__ == '__main__':
     parser.add_argument("--at_epsilon", dest="at_epsilon", type=float, default=5.0,
                         help="Pertubation hyperparameter for adversarial training")
 
+    # virtual adversarial training settings 
+    parser.add_argument("--vat_epsilon", dest="vat_epsilon", type=float, default=5.0,
+                        help="Pertubation hyperparameter for virtual adversarial training")
+
+    # loss weights 
+    parser.add_argument("--ml_loss_weight", dest="ml_loss_weight", type=float, default=1.0,
+                        help="Weight for ml loss")
+    parser.add_argument("--at_loss_weight", dest="at_loss_weight", type=float, default=1.0,
+                        help="Weight for at loss")
+    parser.add_argument("--vat_loss_weight", dest="vat_loss_weight", type=float, default=1.0,
+                        help="Weight for vat loss")
     args = parser.parse_args()
 
     dataloaders, dataset_lens = load_data(args.data_folder + "/" + args.dataset_name, args.words_per_batch)
