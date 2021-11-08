@@ -32,11 +32,16 @@ class CustomLoader(object):
                 if self.collate_fn is not None:
                     collated_batch = self.collate_fn(batch)
                     yield collated_batch
+                else:
+                    yield batch
+
                 batch = []
                 curr_length = 0
         if self.collate_fn is not None:
             collated_batch = self.collate_fn(batch)
             yield collated_batch
+        else:
+            yield batch
 
 
 def load(train_set, valid_set, test_set, unlabel_set, num_token_per_batch):
@@ -71,3 +76,7 @@ def collate_fn(batch):
     word_list = torch.tensor(word_list)  # word_list  batch_size * seq_length
     word_list = word_list.permute(1, 0)
     return {'batch_size': word_list.shape[0], 'text': word_list, 'labels': labels, 'seq_length_list': seq_length}
+
+
+if __name__ == '__main__':
+    pass

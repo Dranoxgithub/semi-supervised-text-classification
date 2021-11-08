@@ -1,17 +1,19 @@
 import torch
 import torch.nn as nn
 from model.model import CustomEmbedding, CustomLSTM, CustomClassifier
-from model.loss import at_loss, vat_loss
+from model.loss import at_loss, vat_loss, EM_loss
 import torch.optim
 import torch.nn.functional as F
 import progressbar
-from tqdm import tqdm 
+from tqdm import tqdm
 import numpy as np
+
 
 class Trainer:
     def __init__(self, data_loaders, dataset_len_dict, device, args):
         self.args = args
         self.train_loader = data_loaders['train']
+        self.unlabeled_loader = data_loaders['unlabel']
         self.valid_loader = data_loaders['valid']
         self.custom_embedding = CustomEmbedding(args).to(device)
         self.custom_LSTM = CustomLSTM(args).to(device)
@@ -35,6 +37,8 @@ class Trainer:
     def train(self):
         criterion = nn.NLLLoss()
         optimizer = torch.optim.Adam(self.collect_trainable_params(), self.args.lr)
+
+        unlabeled_iterator = iter(self.unlabeled_loader)
         for epoch in range(self.args.num_epochs):
             self.custom_embedding.train()
             self.custom_LSTM.train()
@@ -44,26 +48,54 @@ class Trainer:
             num_processed = 0
             bar = progressbar.ProgressBar(max_value=self.dataset_len_dict['train'], redirect_stdout=True)
             for i, input_dict in enumerate(self.train_loader):
+                try:
+                    unlabeled_input_dict = next(unlabeled_iterator)
+                except StopIteration:
+                    unlabeled_iterator = iter(self.unlabeled_loader)
+                    unlabeled_input_dict = next(unlabeled_iterator)
+
                 batch_size = input_dict['labels'].shape[0]
                 # batch_dict.keys() ['batch_size', 'text', 'labels', 'seq_length_list']
                 X, Y = input_dict['text'], input_dict['labels']  # X = sent_le*bsz, Y = bsz
+                X_unlabeled = unlabeled_input_dict['text']
+
                 X, Y = X.to(self.device), Y.to(self.device)
+                X_unlabeled = X_unlabeled.to(self.device)
 
                 embedded = self.custom_embedding(X)  # sent_len*bsz*embedding_dim
+                unlabeled_embedded = self.custom_embedding(X_unlabeled)
 
                 lstm_out, state = self.custom_LSTM(embedded, input_dict)  # lstm_out = bsz*sent_len*(hidden_dim*2)
-                clf_out = self.custom_classifier(lstm_out)  # bsz * num_classes
-                logits = F.log_softmax(clf_out, dim=-1)
+                unlabeled_lstm_out, unlabeled_state = self.custom_LSTM(unlabeled_embedded, unlabeled_input_dict)
 
-                loss = self.args.ml_loss_weight * criterion(logits, Y)
-                
-                
+                logits = self.custom_classifier(lstm_out)  # bsz * num_classes
+                unlabeled_logits = self.custom_classifier(unlabeled_lstm_out)
+
+                normalized_probs = F.log_softmax(logits, dim=-1)
+                loss = 0
+                # CE loss
+                if self.args.use_CE:
+                    loss += self.args.ml_loss_weight * criterion(normalized_probs, Y)
+
                 # at loss
-                # loss += self.args.at_loss_weight * at_loss(input_dict, self.custom_embedding, self.custom_LSTM, self.custom_classifier, 
-                                        # X, Y, at_epsilon=self.args.at_epsilon)
+                if self.args.use_AT:
+                    loss += self.args.at_loss_weight * at_loss(input_dict, self.custom_embedding, self.custom_LSTM,
+                                                            self.custom_classifier,
+                                                            X, Y, at_epsilon=self.args.at_epsilon)
+
                 # vat loss
-                loss += self.args.vat_loss_weight * vat_loss(self.device, input_dict, self.custom_embedding, self.custom_LSTM, self.custom_classifier, 
-                                        X, clf_out.detach(), self.args.vat_epsilon, self.args.hyperpara_for_vat)
+                if self.args.use_VAT:
+                    loss += self.args.vat_loss_weight * vat_loss(self.device, input_dict, self.custom_embedding,
+                                                                self.custom_LSTM, self.custom_classifier,
+                                                                X, logits.detach(), self.args.vat_epsilon,
+                                                                self.args.hyperpara_for_vat)
+
+                # EM loss
+                if self.args.use_EM:
+                    labeled_entropy = EM_loss(logits)
+                    unlabeled_entropy = EM_loss(unlabeled_logits)
+                    averaged_entropy = 0.5 * (labeled_entropy + unlabeled_entropy)
+                    loss += self.args.EM_loss_weight * averaged_entropy
 
                 total_loss += loss
                 optimizer.zero_grad()
@@ -74,12 +106,12 @@ class Trainer:
                 num_processed += batch_size
                 bar.update(num_processed)
 
-                num_correct = self.get_num_correct(logits.cpu().detach(), Y.cpu().detach())
+                num_correct = self.get_num_correct(normalized_probs.cpu().detach(), Y.cpu().detach())
                 acc = num_correct / batch_size
 
                 if i % self.args.eval_freq == 0: print(f'batch {i:04} accuracy: {acc:.2f}')
 
-            # self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")
+            self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")
             print(f'Loss for epoch {epoch} : {total_loss}')
 
     def evaluate(self, dataloader, data_length, dataset_type):
@@ -87,7 +119,7 @@ class Trainer:
         self.custom_embedding.eval()
         self.custom_LSTM.eval()
         self.custom_classifier.eval()
-        
+
         total_num_correct = 0
         num_processed = 0
         bar = progressbar.ProgressBar(max_value=data_length, redirect_stdout=True)
@@ -105,7 +137,6 @@ class Trainer:
             num_processed += batch_size
             bar.update(num_processed)
 
-            
             num_correct = self.get_num_correct(logits.cpu().detach(), Y.cpu().detach())
             total_num_correct += num_correct
         acc = total_num_correct / data_length
