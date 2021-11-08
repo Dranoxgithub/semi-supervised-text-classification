@@ -7,7 +7,7 @@ def at_loss(input_dict, custom_embedding, custom_LSTM, custom_classifier, X, Y, 
     criterion = nn.NLLLoss()
 
     embedded = custom_embedding(X) # sent_len * bsz * embedding_dim
-    embedded.retain_graph()
+    embedded.retain_grad()
     lstm_out, state = custom_LSTM(embedded, input_dict)
     logit = custom_classifier(lstm_out)
     log_softmax = F.log_softmax(logit, dim=-1)
