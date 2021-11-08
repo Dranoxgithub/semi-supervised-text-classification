@@ -87,10 +87,10 @@ if __name__ == '__main__':
     dataloaders, dataset_lens = load_data(args.data_folder + "/" + args.dataset_name, args.words_per_batch)
 
     print(args)
-    # train_loader = dataloaders['unlabel']
-    # iter_un = iter(train_loader)
+    train_loader = dataloaders['unlabel']
+    iter_un = iter(train_loader)
 
-    # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    # model = Trainer(dataloaders, dataset_lens, device, args)
-    # model.train()
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    model = Trainer(dataloaders, dataset_lens, device, args)
+    model.train()
 
