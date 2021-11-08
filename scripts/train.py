@@ -72,25 +72,30 @@ class Trainer:
                 unlabeled_logits = self.custom_classifier(unlabeled_lstm_out)
 
                 normalized_probs = F.log_softmax(logits, dim=-1)
-
-                loss = self.args.ml_loss_weight * criterion(normalized_probs, Y)
+                loss = 0
+                # CE loss
+                if self.args.use_CE:
+                    loss += self.args.ml_loss_weight * criterion(normalized_probs, Y)
 
                 # at loss
-                loss += self.args.at_loss_weight * at_loss(input_dict, self.custom_embedding, self.custom_LSTM,
-                                                           self.custom_classifier,
-                                                           X, Y, at_epsilon=self.args.at_epsilon)
+                if self.args.use_AT:
+                    loss += self.args.at_loss_weight * at_loss(input_dict, self.custom_embedding, self.custom_LSTM,
+                                                            self.custom_classifier,
+                                                            X, Y, at_epsilon=self.args.at_epsilon)
 
                 # vat loss
-                loss += self.args.vat_loss_weight * vat_loss(self.device, input_dict, self.custom_embedding,
-                                                             self.custom_LSTM, self.custom_classifier,
-                                                             X, logits.detach(), self.args.vat_epsilon,
-                                                             self.args.hyperpara_for_vat)
+                if self.args.use_VAT:
+                    loss += self.args.vat_loss_weight * vat_loss(self.device, input_dict, self.custom_embedding,
+                                                                self.custom_LSTM, self.custom_classifier,
+                                                                X, logits.detach(), self.args.vat_epsilon,
+                                                                self.args.hyperpara_for_vat)
 
                 # EM loss
-                labeled_entropy = EM_loss(logits)
-                unlabeled_entropy = EM_loss(unlabeled_logits)
-                averaged_entropy = 0.5 * (labeled_entropy + unlabeled_entropy)
-                loss += self.args.EM_loss_weight * averaged_entropy
+                if self.args.use_EM:
+                    labeled_entropy = EM_loss(logits)
+                    unlabeled_entropy = EM_loss(unlabeled_logits)
+                    averaged_entropy = 0.5 * (labeled_entropy + unlabeled_entropy)
+                    loss += self.args.EM_loss_weight * averaged_entropy
 
                 total_loss += loss
                 optimizer.zero_grad()

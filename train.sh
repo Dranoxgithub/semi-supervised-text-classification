@@ -24,4 +24,8 @@ python3 scripts/main.py --data_folder=${OUT} \
               --random_seed=10 \
               --words_per_batch=10000 \
               --num_epochs=10 \
-              --eval_freq=100
+              --eval_freq=100 \
+              --use_AT \
+              --use_CE \
+              --use_EM \
+              --use_VAT
