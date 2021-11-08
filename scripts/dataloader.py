@@ -32,11 +32,29 @@ class CustomLoader(object):
                 if self.collate_fn is not None:
                     collated_batch = self.collate_fn(batch)
                     yield collated_batch
+                else:
+                    yield batch
+
                 batch = []
                 curr_length = 0
         if self.collate_fn is not None:
             collated_batch = self.collate_fn(batch)
             yield collated_batch
+        else:
+            yield batch
+
+    def __next__(self):
+        batch = []
+        curr_length = 0
+        for idx in self.sampler:
+            batch.append(self.dataset[idx])
+            curr_length += len(self.dataset[idx][0])
+            if curr_length >= self.num_token_per_batch:
+                if self.collate_fn is not None:
+                    collated_batch = self.collate_fn(batch)
+                    return collated_batch
+                else:
+                    yield batch
 
 
 def load(train_set, valid_set, test_set, unlabel_set, num_token_per_batch):
@@ -71,3 +89,27 @@ def collate_fn(batch):
     word_list = torch.tensor(word_list)  # word_list  batch_size * seq_length
     word_list = word_list.permute(1, 0)
     return {'batch_size': word_list.shape[0], 'text': word_list, 'labels': labels, 'seq_length_list': seq_length}
+
+
+if __name__ == '__main__':
+    pass
+    # test_list = [[[1]], [[2, 2]], [[3, 3, 3]], [[4, 4]], [[5]]]
+    # loader = CustomLoader(test_list, 1)
+    # i_loader = iter(loader)
+    #
+    # print(next(i_loader))
+    # print(next(i_loader))
+    # print(next(i_loader))
+    # print(next(i_loader))
+    # print(next(i_loader))
+    # print('-----')
+    # print(next(i_loader))
+    # print(next(i_loader))
+
+    # print(next(loader))
+    # print(next(loader))
+    # print(next(loader))
+    # print(next(loader))
+    # print('----')
+    # for i, batch in enumerate(loader):
+    #     print(batch)

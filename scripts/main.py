@@ -66,18 +66,27 @@ if __name__ == '__main__':
                         help="Weight for at loss")
     parser.add_argument("--vat_loss_weight", dest="vat_loss_weight", type=float, default=1.0,
                         help="Weight for vat loss")
+    parser.add_argument("--EM_loss_weight", dest="EM_loss_weight", type=float, default=1.0,
+                        help="Weight for EM loss")
+
     args = parser.parse_args()
 
     dataloaders, dataset_lens = load_data(args.data_folder + "/" + args.dataset_name, args.words_per_batch)
-    # hidden_dim = 512
-    # class_size = 2
-    # embeddings = torch.rand(114426, 300)
+
+    train_loader = dataloaders['unlabel']
+    iter_un = iter(train_loader)
+
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model = Trainer(dataloaders, dataset_lens, device, args)
     model.train()
 
-    # for i, batch_list in enumerate(dataset['train']):
+    # out = next(iter_un)
+    # print(out['seq_length_list'])
+
+    # for i, batch_list in enumerate(train_loader):
+    #     # print(batch_list)
     #     print(batch_list)
-    #     print(i)
     #
     #     break
+
+
