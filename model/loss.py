@@ -6,12 +6,13 @@ from torch.autograd import Variable
 def at_loss(input_dict, custom_embedding, custom_LSTM, custom_classifier, X, Y, at_epsilon=5.0):
     criterion = nn.NLLLoss()
 
-    embedded = custom_embedding(X).detach().requires_grad_(True) # sent_len * bsz * embedding_dim
+    embedded = custom_embedding(X) # sent_len * bsz * embedding_dim
+    embedded.retain_graph()
     lstm_out, state = custom_LSTM(embedded, input_dict)
     logit = custom_classifier(lstm_out)
     log_softmax = F.log_softmax(logit, dim=-1)
     loss = criterion(log_softmax, Y)
-    loss.backward()
+    loss.backward(retain_graph=True)
 
     g = normalize_matrix(embedded.grad.detach())
     pert_embedded = embedded + at_epsilon * g
