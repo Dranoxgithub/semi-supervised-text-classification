@@ -43,19 +43,6 @@ class CustomLoader(object):
         else:
             yield batch
 
-    def __next__(self):
-        batch = []
-        curr_length = 0
-        for idx in self.sampler:
-            batch.append(self.dataset[idx])
-            curr_length += len(self.dataset[idx][0])
-            if curr_length >= self.num_token_per_batch:
-                if self.collate_fn is not None:
-                    collated_batch = self.collate_fn(batch)
-                    return collated_batch
-                else:
-                    yield batch
-
 
 def load(train_set, valid_set, test_set, unlabel_set, num_token_per_batch):
     # dset = pickle.load(open("/usr/xtmp/ac638/others/semi-supervised-text-classification/temp/aclImdbSimple_pretrained_mixed/aclImdb_tok.train.pkl", 'rb'))
@@ -93,23 +80,3 @@ def collate_fn(batch):
 
 if __name__ == '__main__':
     pass
-    # test_list = [[[1]], [[2, 2]], [[3, 3, 3]], [[4, 4]], [[5]]]
-    # loader = CustomLoader(test_list, 1)
-    # i_loader = iter(loader)
-    #
-    # print(next(i_loader))
-    # print(next(i_loader))
-    # print(next(i_loader))
-    # print(next(i_loader))
-    # print(next(i_loader))
-    # print('-----')
-    # print(next(i_loader))
-    # print(next(i_loader))
-
-    # print(next(loader))
-    # print(next(loader))
-    # print(next(loader))
-    # print(next(loader))
-    # print('----')
-    # for i, batch in enumerate(loader):
-    #     print(batch)

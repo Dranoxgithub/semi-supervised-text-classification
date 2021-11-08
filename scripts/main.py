@@ -80,13 +80,3 @@ if __name__ == '__main__':
     model = Trainer(dataloaders, dataset_lens, device, args)
     model.train()
 
-    # out = next(iter_un)
-    # print(out['seq_length_list'])
-
-    # for i, batch_list in enumerate(train_loader):
-    #     # print(batch_list)
-    #     print(batch_list)
-    #
-    #     break
-
-
