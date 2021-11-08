@@ -98,10 +98,8 @@ if __name__ == "__main__":
     test_dataset = create_dataset(args.test, w2id, label2id, float('inf'))
     unlabel_dataset = create_dataset(args.unlabel, w2id, label2id, float('inf'), True)
 
-    # save all tokenized datasets
-    for which_dataset in ["train", "valid", "test", "unlabel"]:
-        pickle.dump(train_dataset, open(args.output_dir + args.dataset + f'.{which_dataset}.pkl', "wb"))
-    # torch.save(train_dataset, args.output_dir + args.dataset + '.train.pkl')
-    # torch.save(valid_dataset, args.output_dir + args.dataset + '.valid.pkl')
-    # torch.save(test_dataset, args.output_dir + args.dataset + '.test.pkl')
-    # torch.save(unlabel_dataset, args.output_dir + args.dataset + '.unlabel.pkl')
+    # save all tokenized datasets    
+    pickle.dump(train_dataset, open(args.output_dir + args.dataset + '.train.pkl', "wb"))
+    pickle.dump(valid_dataset, open(args.output_dir + args.dataset + '.valid.pkl', "wb"))
+    pickle.dump(test_dataset, open(args.output_dir + args.dataset + '.test.pkl', "wb"))
+    pickle.dump(unlabel_dataset, open(args.output_dir + args.dataset + '.unlabel.pkl', "wb"))
