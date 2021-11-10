@@ -3,9 +3,7 @@
 NAME="agnews_pretrained_mixed"
 OUT="temp/$NAME"
 DATASET="agnews"
-'''
-For Elec, AGNews and DBpedia, use lines below to download pretrained embeddings
-'''
+# For Elec, AGNews and DBpedia, use lines below to download pretrained embeddings
 wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip
 unzip crawl-300d-2M.vec.zip
 mv crawl-300d-2M.vec pretrained_embeddings/
