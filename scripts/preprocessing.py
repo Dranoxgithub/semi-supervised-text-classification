@@ -30,7 +30,8 @@ def read_file(path):
     bar = progressbar.ProgressBar()
     with io.open(path, encoding='utf-8', errors='ignore') as f:
         for line in bar(f, max_value=n_lines):
-            line_list = line.strip().split('\t')
+            # only split at the first tab
+            line_list = line.strip().split('\t', 1)
             assert len(line_list) == 2
 
             label = line_list[0]
