@@ -71,16 +71,23 @@ if __name__ == '__main__':
 
     # whether to use weights
     parser.add_argument('--use_CE', dest='use_CE', action='store_true')
-    parser.set_defaults(use_CE=False)
-    
+    parser.set_defaults(use_CE=True)
+
     parser.add_argument('--use_AT', dest='use_AT', action='store_true')
-    parser.set_defaults(feature=False)
+    parser.set_defaults(use_AT=False)
 
     parser.add_argument('--use_VAT', dest='use_VAT', action='store_true')
-    parser.set_defaults(feature=False)
+    parser.set_defaults(use_VAT=False)
 
     parser.add_argument('--use_EM', dest='use_EM', action='store_true')
-    parser.set_defaults(feature=False)
+    parser.set_defaults(use_EM=False)
+
+    # logging
+    parser.add_argument('--enable_logging', dest='enable_logging', action='store_true')
+    parser.set_defaults(enable_logging=False)
+
+    parser.add_argument("--logging_freq", dest="logging_freq", type=int, default=10,
+                        help="logging_freq")
 
     args = parser.parse_args()
 
@@ -93,4 +100,3 @@ if __name__ == '__main__':
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model = Trainer(dataloaders, dataset_lens, device, args)
     model.train()
-

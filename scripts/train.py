@@ -7,6 +7,8 @@ import torch.nn.functional as F
 import progressbar
 from tqdm import tqdm
 import numpy as np
+from torch.utils.tensorboard import SummaryWriter
+import os
 
 
 class Trainer:
@@ -20,6 +22,10 @@ class Trainer:
         self.custom_classifier = CustomClassifier(args).to(device)
         self.dataset_len_dict = dataset_len_dict
         self.device = device
+        if args.enable_logging is True:
+            comment = f' dataset={args.dataset_name} epochs={args.num_epochs} CE={args.use_CE} AT={args.use_AT}' \
+                      f' VAT={args.use_VAT} EM={args.use_EM}'
+            self.writer = SummaryWriter(comment=comment)
 
     @staticmethod
     def get_num_correct(out, target):
@@ -35,10 +41,14 @@ class Trainer:
         return param_list
 
     def train(self):
+
         criterion = nn.NLLLoss()
         optimizer = torch.optim.Adam(self.collect_trainable_params(), self.args.lr)
 
         unlabeled_iterator = iter(self.unlabeled_loader)
+
+        self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")
+
         for epoch in range(self.args.num_epochs):
             self.custom_embedding.train()
             self.custom_LSTM.train()
@@ -75,27 +85,31 @@ class Trainer:
                 loss = 0
                 # CE loss
                 if self.args.use_CE:
-                    loss += self.args.ml_loss_weight * criterion(normalized_probs, Y)
+                    CE_loss = self.args.ml_loss_weight * criterion(normalized_probs, Y)
+                    loss += CE_loss
 
                 # at loss
                 if self.args.use_AT:
-                    loss += self.args.at_loss_weight * at_loss(input_dict, self.custom_embedding, self.custom_LSTM,
-                                                            self.custom_classifier,
-                                                            X, Y, at_epsilon=self.args.at_epsilon)
+                    AT_loss = self.args.at_loss_weight * at_loss(input_dict, self.custom_embedding, self.custom_LSTM,
+                                                                 self.custom_classifier,
+                                                                 X, Y, at_epsilon=self.args.at_epsilon)
+                    loss += AT_loss
 
                 # vat loss
                 if self.args.use_VAT:
-                    loss += self.args.vat_loss_weight * vat_loss(self.device, input_dict, self.custom_embedding,
-                                                                self.custom_LSTM, self.custom_classifier,
-                                                                X, logits.detach(), self.args.vat_epsilon,
-                                                                self.args.hyperpara_for_vat)
+                    VAT_loss = self.args.vat_loss_weight * vat_loss(self.device, input_dict, self.custom_embedding,
+                                                                    self.custom_LSTM, self.custom_classifier,
+                                                                    X, logits.detach(), self.args.vat_epsilon,
+                                                                    self.args.hyperpara_for_vat)
+                    loss += VAT_loss
 
                 # EM loss
                 if self.args.use_EM:
                     labeled_entropy = EM_loss(logits)
                     unlabeled_entropy = EM_loss(unlabeled_logits)
                     averaged_entropy = 0.5 * (labeled_entropy + unlabeled_entropy)
-                    loss += self.args.EM_loss_weight * averaged_entropy
+                    EM_loss_val = self.args.EM_loss_weight * averaged_entropy
+                    loss += EM_loss_val
 
                 total_loss += loss
                 optimizer.zero_grad()
@@ -109,10 +123,30 @@ class Trainer:
                 num_correct = self.get_num_correct(normalized_probs.cpu().detach(), Y.cpu().detach())
                 acc = num_correct / batch_size
 
-                if i % self.args.eval_freq == 0: print(f'batch {i:04} accuracy: {acc:.2f}')
+                if i % self.args.eval_freq == 0:
+                    print(f'batch {i:04} accuracy: {acc:.2f}')
 
-            self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")
+                if i % self.args.logging_freq == 0:
+                    if self.args.enable_logging is True:
+                        self.writer.add_scalar("training accuracy", acc, i)
+                        self.writer.add_scalar("training total loss", loss.detach().cpu().numpy(), i)
+                        if self.args.use_CE is True:
+                            self.writer.add_scalar("CE loss", CE_loss.detach().cpu().numpy(), i)
+                        if self.args.use_AT is True:
+                            self.writer.add_scalar("AT loss", AT_loss.detach().cpu().numpy(), i)
+                        if self.args.use_VAT is True:
+                            self.writer.add_scalar("VAT loss", VAT_loss.detach().cpu().numpy(), i)
+                        if self.args.use_EM is True:
+                            self.writer.add_scalar("EM loss", EM_loss_val.detach().cpu().numpy(), i)
+
+            eval_acc = self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")
+            if self.args.enable_logging is True:
+                self.writer.add_scalar("validation accuracy", eval_acc, epoch)
             print(f'Loss for epoch {epoch} : {total_loss}')
+        if self.args.enable_logging is True:
+            self.writer.flush()
+            self.writer.close()
+
 
     def evaluate(self, dataloader, data_length, dataset_type):
         print(f"Entering evaluation on {dataset_type}")
@@ -141,3 +175,4 @@ class Trainer:
             total_num_correct += num_correct
         acc = total_num_correct / data_length
         print(f'Accuracy on {dataset_type} dataset: {acc:.2f}')
+        return acc
