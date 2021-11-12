@@ -26,8 +26,9 @@ python3 scripts/main.py --data_folder=${OUT} \
               --num_epochs=50 \
               --eval_freq=100 \
               --num_labels=2 \
-#              --enable_logging \
-#              --logging_freq=10 \
-#              --use_AT \
-#              --use_EM \
-#              --use_VAT
+              --enable_logging \
+              --logging_freq=10 \
+              --use_CE \
+              --use_AT \
+              --use_EM \
+              --use_VAT

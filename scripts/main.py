@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
     # whether to use weights
     parser.add_argument('--use_CE', dest='use_CE', action='store_true')
-    parser.set_defaults(use_CE=True)
+    parser.set_defaults(use_CE=False)
 
     parser.add_argument('--use_AT', dest='use_AT', action='store_true')
     parser.set_defaults(use_AT=False)

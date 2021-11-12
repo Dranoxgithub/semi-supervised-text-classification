@@ -33,6 +33,7 @@ python3 scripts/main.py --data_folder=${OUT} \
               --num_labels=4 \
               --enable_logging \
               --logging_freq \
+              --use_CE \
               --use_AT \
               --use_EM \
               --use_VAT
