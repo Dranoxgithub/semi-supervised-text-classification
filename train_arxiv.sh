@@ -14,6 +14,7 @@ mkdir raw_datasets/arxiv
 kaggle datasets download Cornell-University/arxiv
 unzip arxiv.zip
 mv arxiv-metadata-oai-snapshot.json raw_datasets/arxiv
+# the following line will print out unique number of labels; should be 11128 since random seed is fixed
 python3 scripts/load_arxiv.py
 
 # Preprocess

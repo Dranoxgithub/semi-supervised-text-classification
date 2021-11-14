@@ -18,13 +18,13 @@ corpus_path = path + "/corpus.txt"
 embedding_path = "../pretrained_embeddings/arxiv_pretrained.txt"
 
 
-test_size = 443000
-train_size = 664000
+test_size = 44300
+train_size = 66400
 zipped = list(zip(arxiv_corpus, arxiv_label))
+random.seed(7) # fix random seed so that the shuffled result would be the same
 random.shuffle(zipped)
 shuffled_corpus, shuffled_label = zip(*zipped)
 
-print('start')
 with open(train_path, 'w') as file:
     counter = 0
     for i in range(train_size):
@@ -47,10 +47,11 @@ with open(corpus_path, 'w') as file:
     for lines in arxiv_corpus:
         file.write(lines.lower())
 
-print('next')
+unique_label = set(shuffled_label[:train_size+test_size])
+print("unique label number: ", len(unique_label))
+
 model = Word2Vec(corpus_file=corpus_path, vector_size=300)
 word_vector = model.wv
 del model
 word_vector.save_word2vec_format(embedding_path)
-print('done')
 
