@@ -29,6 +29,6 @@ python3 scripts/main.py --data_folder=${OUT} \
               --enable_logging \
               --logging_freq=10 \
               --use_CE \
-              --use_AT \
-              --use_EM \
-              --use_VAT
+#              --use_AT \
+#              --use_EM \
+#              --use_VAT

@@ -32,7 +32,7 @@ python3 scripts/main.py --data_folder=${OUT} \
               --eval_freq=100 \
               --num_labels=4 \
               --enable_logging \
-              --logging_freq \
+              --logging_freq=10 \
               --use_CE \
               --use_AT \
               --use_EM \

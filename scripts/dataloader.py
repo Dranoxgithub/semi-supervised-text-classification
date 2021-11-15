@@ -36,11 +36,12 @@ class CustomLoader(object):
                     yield batch
                 batch = []
                 curr_length = 0
-        if self.collate_fn is not None and len(batch) != 0:
-            collated_batch = self.collate_fn(batch)
-            yield collated_batch
-        else:
-            yield batch
+        if len(batch) != 0:
+            if self.collate_fn is not None:
+                collated_batch = self.collate_fn(batch)
+                yield collated_batch
+            else:
+                yield batch
 
 
 def load(train_set, valid_set, test_set, unlabel_set, num_token_per_batch):

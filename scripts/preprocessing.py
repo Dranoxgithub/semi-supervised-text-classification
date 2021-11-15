@@ -83,6 +83,10 @@ if __name__ == "__main__":
     # get the most common word from train, valid and unlabel 
     vocabs_set, labels_set = count_vocabs_and_labels([args.train, args.valid, args.unlabel], args.vocab_size)
     labels_list = sorted(list(labels_set))
+    print(labels_list)
+    if "-1" in labels_list:
+        labels_list.remove("-1")
+    print(labels_list)
 
     vocabs_list = ['<pad>', '<eos>', '<unk>', '<bos>'] + list(vocabs_set)
     w2id = {word: index for index, word in enumerate(vocabs_list)}

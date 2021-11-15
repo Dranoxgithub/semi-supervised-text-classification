@@ -64,7 +64,12 @@ class Trainer:
                     unlabeled_iterator = iter(self.unlabeled_loader)
                     unlabeled_input_dict = next(unlabeled_iterator)
 
-                batch_size = input_dict['labels'].shape[0]
+                try:
+                    batch_size = input_dict['labels'].shape[0]
+                except TypeError:
+                    print(input_dict)
+                    raise TypeError
+
                 # batch_dict.keys() ['batch_size', 'text', 'labels', 'seq_length_list']
                 X, Y = input_dict['text'], input_dict['labels']  # X = sent_le*bsz, Y = bsz
                 X_unlabeled = unlabeled_input_dict['text']
@@ -158,7 +163,12 @@ class Trainer:
         num_processed = 0
         bar = progressbar.ProgressBar(max_value=data_length, redirect_stdout=True)
         for i, input_dict in enumerate(dataloader):
-            batch_size = input_dict['labels'].shape[0]
+            try:
+                batch_size = input_dict['labels'].shape[0]
+            except TypeError:
+                print(input_dict)
+                raise TypeError
+
             # batch_dict.keys() ['batch_size', 'text', 'labels', 'seq_length_list']
             X, Y = input_dict['text'], input_dict['labels']
             X, Y = X.to(self.device), Y.to(self.device)  # X = padded_sent_le*batch size
