@@ -110,8 +110,8 @@ class Trainer:
                                                                     self.custom_LSTM, self.custom_classifier,
                                                                     X, unlabeled_logits.detach(), self.args.vat_epsilon,
                                                                     self.args.hyperpara_for_vat)
-                    loss += VAT_loss
-                    loss += VAT_loss_unlabel
+                    ratio = len(X) / (len(X) +  len(X_unlabeled))
+                    loss = loss + ratio * VAT_loss + (1 - ratio) * VAT_loss_unlabel
 
                 # EM loss
                 if self.args.use_EM:
