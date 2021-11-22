@@ -24,6 +24,7 @@ if __name__ == '__main__':
     parser.add_argument("--words_per_batch", dest="words_per_batch", type=int, required=True, help="words_per_batch")
     parser.add_argument("--num_epochs", dest="num_epochs", type=int, required=True, help="number of training epochs")
     parser.add_argument("--lr", dest="lr", type=float, default=1e-3, help="learning rate")
+    parser.add_argument("--betas", dest="betas", type=tuple, default=[0.0, 0.98], help="betas")
     parser.add_argument("--weight_decay", dest="weight_decay", type=float, default=0.0, help="weight decay")
     parser.add_argument("--num_labels", dest="num_labels", type=int, default=2,
                         help="number of labels in multilabel task")

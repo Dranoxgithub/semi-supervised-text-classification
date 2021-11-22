@@ -69,4 +69,5 @@ def kl_divergence(logit_for_v, new_logit):
 
 def EM_loss(logits):
     p = F.softmax(logits, dim=-1)
-    return -1 * torch.sum(p * F.log_softmax(logits, dim=-1)) / logits.size()[0]
+    return -1 * torch.sum(p * F.log_softmax(logits, dim=-1)) / logits.size(dim=0)
+

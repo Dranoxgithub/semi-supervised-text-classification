@@ -5,7 +5,6 @@ from model.loss import at_loss, vat_loss, EM_loss
 import torch.optim
 import torch.nn.functional as F
 import progressbar
-from tqdm import tqdm
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import os
@@ -41,9 +40,9 @@ class Trainer:
         return param_list
 
     def train(self):
-
+        batch_number = 0
         criterion = nn.NLLLoss()
-        optimizer = torch.optim.Adam(self.collect_trainable_params(), self.args.lr)
+        optimizer = torch.optim.Adam(self.collect_trainable_params(), lr=self.args.lr, betas=self.args.betas)
 
         unlabeled_iterator = iter(self.unlabeled_loader)
 
@@ -55,6 +54,10 @@ class Trainer:
             self.custom_classifier.train()
             print('Epoch ', epoch)
             total_loss = 0
+            total_CE_loss = 0
+            total_EM_loss = 0
+            total_AT_loss = 0
+            total_VAT_loss = 0
             num_processed = 0
             bar = progressbar.ProgressBar(max_value=self.dataset_len_dict['train'], redirect_stdout=True)
             for i, input_dict in enumerate(self.train_loader):
@@ -92,6 +95,7 @@ class Trainer:
                 if self.args.use_CE:
                     CE_loss = self.args.ml_loss_weight * criterion(normalized_probs, Y)
                     loss += CE_loss
+                    total_CE_loss += CE_loss
 
                 # at loss
                 if self.args.use_AT:
@@ -99,6 +103,7 @@ class Trainer:
                                                                  self.custom_classifier,
                                                                  X, Y, at_epsilon=self.args.at_epsilon)
                     loss += AT_loss
+                    total_AT_loss += AT_loss
 
                 # vat loss
                 if self.args.use_VAT:
@@ -106,22 +111,33 @@ class Trainer:
                                                                     self.custom_LSTM, self.custom_classifier,
                                                                     X, logits.detach(), self.args.vat_epsilon,
                                                                     self.args.hyperpara_for_vat)
-                    VAT_loss_unlabel = self.args.vat_loss_weight * vat_loss(self.device, unlabeled_input_dict, self.custom_embedding,
-                                                                    self.custom_LSTM, self.custom_classifier,
-                                                                    X, unlabeled_logits.detach(), self.args.vat_epsilon,
-                                                                    self.args.hyperpara_for_vat)
-                    ratio = len(X) / (len(X) +  len(X_unlabeled))
-                    loss = loss + ratio * VAT_loss + (1 - ratio) * VAT_loss_unlabel
+
+
+                    VAT_loss_unlabel = self.args.vat_loss_weight * vat_loss(self.device, unlabeled_input_dict,
+                                                                            self.custom_embedding,
+                                                                            self.custom_LSTM, self.custom_classifier,
+                                                                            X_unlabeled, unlabeled_logits.detach(),
+                                                                            self.args.vat_epsilon,
+                                                                            self.args.hyperpara_for_vat)
+                    ratio = len(X) / (len(X) + len(X_unlabeled))
+                    averaged_VAT_loss = ratio * VAT_loss + (1 - ratio) * VAT_loss_unlabel
+                    loss = loss + averaged_VAT_loss
+                    total_VAT_loss += averaged_VAT_loss
 
                 # EM loss
                 if self.args.use_EM:
+                    combined_len = logits.size(dim=0) + unlabeled_logits.size(dim=0)
                     labeled_entropy = EM_loss(logits)
                     unlabeled_entropy = EM_loss(unlabeled_logits)
-                    averaged_entropy = 0.5 * (labeled_entropy + unlabeled_entropy)
+
+                    averaged_entropy = (logits.size(dim=0)/combined_len) * labeled_entropy + \
+                                       (unlabeled_logits.size(dim=0)/combined_len) * unlabeled_entropy
                     EM_loss_val = self.args.EM_loss_weight * averaged_entropy
                     loss += EM_loss_val
+                    total_EM_loss += EM_loss_val
 
                 total_loss += loss
+
                 optimizer.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_([p for group in optimizer.param_groups for p in group['params']],
@@ -138,25 +154,29 @@ class Trainer:
 
                 if i % self.args.logging_freq == 0:
                     if self.args.enable_logging is True:
-                        self.writer.add_scalar("training accuracy", acc, i)
-                        self.writer.add_scalar("training total loss", loss.detach().cpu().numpy(), i)
-                        if self.args.use_CE is True:
-                            self.writer.add_scalar("CE loss", CE_loss.detach().cpu().numpy(), i)
-                        if self.args.use_AT is True:
-                            self.writer.add_scalar("AT loss", AT_loss.detach().cpu().numpy(), i)
-                        if self.args.use_VAT is True:
-                            self.writer.add_scalar("VAT loss", VAT_loss.detach().cpu().numpy(), i)
-                        if self.args.use_EM is True:
-                            self.writer.add_scalar("EM loss", EM_loss_val.detach().cpu().numpy(), i)
+                        self.writer.add_scalar("training accuracy", acc, batch_number)
+
+                batch_number += 1
 
             eval_acc = self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")
+
             if self.args.enable_logging is True:
+                self.writer.add_scalar("training total loss", total_loss.detach().cpu().numpy(), epoch)
                 self.writer.add_scalar("validation accuracy", eval_acc, epoch)
+                if self.args.use_CE is True:
+                    self.writer.add_scalar("CE loss", total_CE_loss.detach().cpu().numpy(), epoch)
+                if self.args.use_AT is True:
+                    self.writer.add_scalar("AT loss", total_AT_loss.detach().cpu().numpy(), epoch)
+                if self.args.use_VAT is True:
+                    self.writer.add_scalar("VAT loss", total_VAT_loss.detach().cpu().numpy(), epoch)
+                if self.args.use_EM is True:
+                    self.writer.add_scalar("EM loss", total_EM_loss.detach().cpu().numpy(), epoch)
+
             print(f'Loss for epoch {epoch} : {total_loss}')
+
         if self.args.enable_logging is True:
             self.writer.flush()
             self.writer.close()
-
 
     def evaluate(self, dataloader, data_length, dataset_type):
         print(f"Entering evaluation on {dataset_type}")
