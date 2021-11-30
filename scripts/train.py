@@ -22,8 +22,8 @@ class Trainer:
         self.dataset_len_dict = dataset_len_dict
         self.device = device
         if args.enable_logging is True:
-            comment = f' dataset={args.dataset_name} epochs={args.num_epochs} CE={args.use_CE} AT={args.use_AT}' \
-                      f' VAT={args.use_VAT} EM={args.use_EM}'
+            comment = f' dset={args.dataset_name} CE({args.ml_loss_weight}x)={args.use_CE} AT({args.at_loss_weight}x)={args.use_AT}' \
+                      f' VAT({args.vat_loss_weight}x)={args.use_VAT} EM({args.em_loss_weight}x)={args.use_EM}'
             self.writer = SummaryWriter(comment=comment)
 
     @staticmethod
@@ -39,11 +39,22 @@ class Trainer:
                      list(self.custom_classifier.parameters())
         return param_list
 
+    def log_gradients_model(self, step):
+        for tag, value in self.custom_embedding.named_parameters():
+            if value.grad is not None:
+                self.writer.add_histogram(tag + "/grad", value.grad.cpu(), step)
+        for tag, value in self.custom_LSTM.named_parameters():
+            if value.grad is not None and tag == 'LSTM.weight_hh_l0':
+                self.writer.add_histogram(tag + "/grad", value.grad.cpu(), step)
+        for tag, value in self.custom_classifier.named_parameters():
+            if value.grad is not None:
+                self.writer.add_histogram(tag + "/grad", value.grad.cpu(), step)
+
     def train(self):
         batch_number = 0
         criterion = nn.NLLLoss()
         optimizer = torch.optim.Adam(self.collect_trainable_params(), lr=self.args.lr, betas=self.args.betas)
-
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99998)
         unlabeled_iterator = iter(self.unlabeled_loader)
 
         self.evaluate(self.valid_loader, self.dataset_len_dict['valid'], "valid")
@@ -112,7 +123,6 @@ class Trainer:
                                                                     X, logits.detach(), self.args.vat_epsilon,
                                                                     self.args.hyperpara_for_vat)
 
-
                     VAT_loss_unlabel = self.args.vat_loss_weight * vat_loss(self.device, unlabeled_input_dict,
                                                                             self.custom_embedding,
                                                                             self.custom_LSTM, self.custom_classifier,
@@ -132,7 +142,7 @@ class Trainer:
 
                     averaged_entropy = (logits.size(dim=0)/combined_len) * labeled_entropy + \
                                        (unlabeled_logits.size(dim=0)/combined_len) * unlabeled_entropy
-                    EM_loss_val = self.args.EM_loss_weight * averaged_entropy
+                    EM_loss_val = self.args.em_loss_weight * averaged_entropy
                     loss += EM_loss_val
                     total_EM_loss += EM_loss_val
 
@@ -155,6 +165,7 @@ class Trainer:
                 if i % self.args.logging_freq == 0:
                     if self.args.enable_logging is True:
                         self.writer.add_scalar("training accuracy", acc, batch_number)
+                        self.log_gradients_model(batch_number)
 
                 batch_number += 1
 
@@ -164,19 +175,21 @@ class Trainer:
                 self.writer.add_scalar("training total loss", total_loss.detach().cpu().numpy(), epoch)
                 self.writer.add_scalar("validation accuracy", eval_acc, epoch)
                 if self.args.use_CE is True:
-                    self.writer.add_scalar("CE loss", total_CE_loss.detach().cpu().numpy(), epoch)
+                    self.writer.add_scalar(f"CE loss", total_CE_loss.detach().cpu().numpy(), epoch)
                 if self.args.use_AT is True:
-                    self.writer.add_scalar("AT loss", total_AT_loss.detach().cpu().numpy(), epoch)
+                    self.writer.add_scalar(f"AT loss", total_AT_loss.detach().cpu().numpy(), epoch)
                 if self.args.use_VAT is True:
-                    self.writer.add_scalar("VAT loss", total_VAT_loss.detach().cpu().numpy(), epoch)
+                    self.writer.add_scalar(f"VAT loss", total_VAT_loss.detach().cpu().numpy(), epoch)
                 if self.args.use_EM is True:
-                    self.writer.add_scalar("EM loss", total_EM_loss.detach().cpu().numpy(), epoch)
+                    self.writer.add_scalar(f"EM loss", total_EM_loss.detach().cpu().numpy(), epoch)
 
             print(f'Loss for epoch {epoch} : {total_loss}')
+            scheduler.step()
 
         if self.args.enable_logging is True:
             self.writer.flush()
             self.writer.close()
+
 
     def evaluate(self, dataloader, data_length, dataset_type):
         print(f"Entering evaluation on {dataset_type}")

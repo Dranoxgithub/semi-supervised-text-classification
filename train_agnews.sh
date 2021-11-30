@@ -31,10 +31,14 @@ python3 scripts/main.py --data_folder=${OUT} \
               --num_epochs=50 \
               --eval_freq=100 \
               --num_labels=4 \
+              --logging_freq=50 \
+              --ml_loss_weight=1 \
+              --at_loss_weight=1 \
+              --vat_loss_weight=1 \
+              --em_loss_weight=1 \
+              --total_loss_weight=1 \
               --enable_logging \
-              --logging_freq=10 \
               --use_CE \
-#              --use_AT \
-#              --use_EM \
-#              --use_VAT
-
+              --use_AT \
+              --use_EM \
+              --use_VAT

@@ -67,8 +67,10 @@ if __name__ == '__main__':
                         help="Weight for at loss")
     parser.add_argument("--vat_loss_weight", dest="vat_loss_weight", type=float, default=1.0,
                         help="Weight for vat loss")
-    parser.add_argument("--EM_loss_weight", dest="EM_loss_weight", type=float, default=1.0,
+    parser.add_argument("--em_loss_weight", dest="em_loss_weight", type=float, default=1.0,
                         help="Weight for EM loss")
+    parser.add_argument("--total_loss_weight", dest="--total_loss_weight", type=float, default=1.0,
+                        help="--total_loss_weight")
 
     # whether to use weights
     parser.add_argument('--use_CE', dest='use_CE', action='store_true')
