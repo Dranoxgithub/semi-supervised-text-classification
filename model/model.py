@@ -12,14 +12,10 @@ class CustomEmbedding(nn.Module):
         pretrained_embeddings = np.load(os.path.join(args.data_folder, args.dataset_name + '.word_vectors.npy'))
         pretrained_embeddings = torch.from_numpy(pretrained_embeddings).type(torch.FloatTensor)
         self.embedding = nn.Embedding.from_pretrained(pretrained_embeddings, freeze=False)
-        self.word_dropout = nn.Dropout(p=args.embedding_dropout)
 
     def forward(self, indices):
-        embedded = self.embedding(indices) # sent_len * bsz * embedding dim 
-        dropped = self.word_dropout(embedded)
-        # dropped = dropped.type(torch.cuda.FloatTensor)
-        # print(f'curr {embedded.get_device()}')
-        return dropped
+        embedded = self.embedding(indices) # sent_len * bsz * embedding dim
+        return embedded
 
 
 class CustomLSTM(nn.Module):

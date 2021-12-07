@@ -33,9 +33,7 @@ if __name__ == '__main__':
     parser.add_argument("--eval_freq", dest="eval_freq", type=int, default=100,
                         help="How frequent do we print the evaluation frequency for a batch currently in training")
 
-    # embedding settings
-    parser.add_argument("--embedding_dropout", dest="embedding_dropout", type=float, default=0.5,
-                        help="embedding dropout chance")
+    # embedding settings - None
 
     # LSTM settings
     parser.add_argument("--LSTM_input_dropout", dest="LSTM_input_dropout", type=float, default=0.5,
