@@ -6,6 +6,7 @@ DATASET="elec"
 #For Elec, AGNews and DBpedia, use lines below to download pretrained embeddings
 wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip
 unzip crawl-300d-2M.vec.zip
+mv crawl-300d-2M.vec pretrained_embeddings/
 
 #unzip tar.gz file
 tar -xvf raw_datasets/elec/unlabel.tar.gz
